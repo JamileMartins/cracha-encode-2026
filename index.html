@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Crachá VII Encode</title>
+<meta name="description" content="Gere seu crachá virtual do VII Encode 2026 para compartilhar no Instagram.">
+<meta property="og:title" content="Crachá VII Encode 2026">
+<meta property="og:description" content="Gere seu crachá virtual e compartilhe nos stories ou no feed.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: formulário à esquerda, prévia do crachá à direita; empilha no celular */
+:root{
+  --bg:#0A1410; --surface:#0F1E17; --line:rgba(61,220,107,.22);
+  --fg:#EAF5EE; --muted:#9DB5A7; --accent:#3DDC6B; --accent-ink:#0A1410;
+  --field:#0B1913; --grid:rgba(61,220,107,.07);
+  --display:'Space Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Consolas,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#F3F7F4; --surface:#FFFFFF; --line:rgba(10,20,16,.12);
+    --fg:#0A1410; --muted:#4B5E54; --accent:#15924A; --accent-ink:#FFFFFF;
+    --field:#F3F7F4; --grid:rgba(10,20,16,.05); color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#F3F7F4; --surface:#FFFFFF; --line:rgba(10,20,16,.12);
+  --fg:#0A1410; --muted:#4B5E54; --accent:#15924A; --accent-ink:#FFFFFF;
+  --field:#F3F7F4; --grid:rgba(10,20,16,.05); color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--fg); font-family:var(--display); font-size:16px; line-height:1.5;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:40px 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:32px 48px; min-height:100vh;
+}
+.wrap{max-width:1040px;margin:0 auto;display:grid;gap:28px}
+header{display:grid;gap:6px}
+.prompt{font-family:var(--mono);color:var(--accent);font-size:14px}
+h1{margin:0;font-size:clamp(28px,5vw,42px);line-height:1.1;text-wrap:balance}
+h1 span{color:var(--accent)}
+.lead{margin:0;color:var(--muted);max-width:60ch}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;display:grid;gap:18px;min-width:0}
+.label{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.photo-edit{display:grid;justify-items:center;gap:10px}
+#photoCanvas{width:200px;height:200px;border-radius:50%;border:4px solid var(--accent);cursor:grab;touch-action:none;background:var(--field)}
+#photoCanvas.dragging{cursor:grabbing}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center}
+.zoom{display:grid;gap:6px;width:100%}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.hint{font-size:13px;color:var(--muted);text-align:center;margin:0}
+.linkbtn{background:none;border:0;color:var(--accent);font:600 14px var(--display);cursor:pointer;padding:4px 6px;border-radius:6px}
+.field{display:grid;gap:6px}
+.field input{width:100%;font:500 17px var(--display);color:var(--fg);background:var(--field);border:1px solid var(--line);border-radius:12px;padding:13px 14px}
+.field input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--field);border:1px solid var(--line);border-radius:12px;padding:4px}
+.seg button{border:0;border-radius:9px;padding:10px 8px;font:600 14px var(--display);background:transparent;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg small{display:block;font:400 11px var(--mono);opacity:.8}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:420px){.opts{grid-template-columns:1fr}}
+.actions{display:grid;gap:10px}
+.btn{border:0;border-radius:14px;padding:15px;font:700 17px var(--display);cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btn:focus-visible,.seg button:focus-visible,.linkbtn:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.preview{display:grid;justify-items:center;gap:12px;position:sticky;top:16px}
+#badge{width:100%;max-width:360px;height:auto;border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.35);border:1px solid var(--line)}
+.status{font-family:var(--mono);font-size:13px;color:var(--muted);text-align:center;min-height:1.5em;margin:0}
+footer{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center}
+#fileInput{display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="prompt">$ ./encode --cracha --edicao=7</div>
+    <h1>Gere seu crachá do <span>VII Encode</span></h1>
+    <p class="lead">Coloque sua foto, seu nome e seu curso. Baixe a imagem e publique nos stories ou no feed do Instagram.</p>
+  </header>
+
+  <div class="grid">
+    <form class="panel" id="form" autocomplete="off">
+      <div class="photo-edit">
+        <span class="label">Sua foto</span>
+        <canvas id="photoCanvas" width="400" height="400" aria-label="Enquadramento da foto. Arraste para posicionar."></canvas>
+        <div class="zoom">
+          <label class="label" for="zoom" style="text-align:center">Zoom</label>
+          <input type="range" id="zoom" min="1" max="3" step="0.01" value="1">
+        </div>
+        <p class="hint">Arraste a foto para enquadrar</p>
+        <div class="row">
+          <button type="button" class="linkbtn" id="pickBtn">Escolher foto</button>
+          <button type="button" class="linkbtn" id="centerBtn">Centralizar</button>
+        </div>
+        <input type="file" id="fileInput" accept="image/*">
+      </div>
+
+      <div class="field">
+        <label class="label" for="name">Nome</label>
+        <input id="name" maxlength="40" placeholder="Como você quer aparecer" value="">
+      </div>
+      <div class="field">
+        <label class="label" for="course">Curso / turma</label>
+        <input id="course" maxlength="40" placeholder="Ex.: Redes de Computadores · S3" value="">
+      </div>
+
+      <div class="opts">
+        <div class="field">
+          <span class="label" id="fmtLabel">Formato</span>
+          <div class="seg" role="group" aria-labelledby="fmtLabel">
+            <button type="button" data-fmt="story" aria-pressed="true">Stories<small>1080×1920</small></button>
+            <button type="button" data-fmt="post" aria-pressed="false">Feed<small>1080×1350</small></button>
+          </div>
+        </div>
+        <div class="field">
+          <span class="label" id="themeLabel">Fundo</span>
+          <div class="seg" role="group" aria-labelledby="themeLabel">
+            <button type="button" data-theme-opt="dark" aria-pressed="true">Escuro<small>terminal</small></button>
+            <button type="button" data-theme-opt="light" aria-pressed="false">Claro<small>branco</small></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn" id="downloadBtn">Baixar crachá</button>
+        <button type="button" class="btn ghost" id="shareBtn" hidden>Compartilhar no Instagram</button>
+      </div>
+    </form>
+
+    <div class="preview">
+      <span class="label">Prévia</span>
+      <canvas id="badge" width="1080" height="1920" aria-label="Prévia do crachá"></canvas>
+      <p class="status" id="status" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <footer>VII Encode · 10 e 11 de novembro de 2026 · IFCE Campus Canindé</footer>
+</div>
+
+<script>
+(() => {
+  const EVENT = {
+    edition: 'VII', name: 'Encode', year: '2026',
+    subtitle: 'Encontro Híbrido do Eixo de TI',
+    when: '10 e 11 nov 2026', where: 'IFCE Campus Canindé',
+    tag: 'PARTICIPANTE', hashtag: '#VIIEncode'
+  };
+  const THEMES = {
+    dark: {
+      bg:'#0A1410', grid:'rgba(61,220,107,0.07)', card:'#0F1E17', cardEdge:'rgba(61,220,107,0.45)',
+      fg:'#EAF5EE', muted:'#9DB5A7', accent:'#3DDC6B', accentInk:'#0A1410', watermark:'rgba(61,220,107,0.06)',
+      strap:'#13261D', strapText:'rgba(61,220,107,0.75)', clip:'#2A3A33', clipHi:'#4A5D54', hole:'#0A1410',
+      shadow:'rgba(0,0,0,0.55)', ring:'rgba(61,220,107,0.18)', photoBg:'#13261D'
+    },
+    light: {
+      bg:'#F3F7F4', grid:'rgba(10,20,16,0.06)', card:'#FFFFFF', cardEdge:'rgba(21,146,74,0.35)',
+      fg:'#0A1410', muted:'#4B5E54', accent:'#15924A', accentInk:'#FFFFFF', watermark:'rgba(21,146,74,0.07)',
+      strap:'#0A1410', strapText:'rgba(61,220,107,0.9)', clip:'#2A3A33', clipHi:'#56685F', hole:'#F3F7F4',
+      shadow:'rgba(10,20,16,0.18)', ring:'rgba(21,146,74,0.15)', photoBg:'#E6F2EA'
+    }
+  };
+  const FORMATS = { story:{w:1080,h:1920,scale:1,top:360}, post:{w:1080,h:1350,scale:0.86,top:null} };
+
+  const state = { fmt:'story', theme:'dark', img:null, zoom:1, ox:0, oy:0 };
+  const $ = id => document.getElementById(id);
+  const badge = $('badge'), bctx = badge.getContext('2d');
+  const pc = $('photoCanvas'), pctx = pc.getContext('2d');
+  const nameIn = $('name'), courseIn = $('course'), zoomIn = $('zoom'), statusEl = $('status');
+
+  // ---------- helpers ----------
+  function rr(ctx, x, y, w, h, r){
+    ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  }
+  function fitText(ctx, text, maxW, size, minSize, weight, family){
+    let s = size;
+    do { ctx.font = `${weight} ${s}px ${family}`; if (ctx.measureText(text).width <= maxW) return s; s -= 2; } while (s >= minSize);
+    ctx.font = `${weight} ${minSize}px ${family}`;
+    return minSize;
+  }
+  function ellipsize(ctx, text, maxW){
+    if (ctx.measureText(text).width <= maxW) return text;
+    let t = text; while (t.length && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1);
+    return t.trimEnd() + '…';
+  }
+  function initials(name){
+    const p = name.trim().split(/\s+/).filter(Boolean);
+    if (!p.length) return '</>';
+    return (p[0][0] + (p.length > 1 ? p[p.length-1][0] : '')).toUpperCase();
+  }
+  // draws the user photo into a circle of diameter D centered at (cx,cy)
+  function drawPhoto(ctx, cx, cy, D, T){
+    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, D/2, 0, Math.PI*2); ctx.closePath(); ctx.clip();
+    ctx.fillStyle = T.photoBg; ctx.fillRect(cx-D/2, cy-D/2, D, D);
+    if (state.img){
+      const im = state.img, s = (D / Math.min(im.naturalWidth, im.naturalHeight)) * state.zoom;
+      const w = im.naturalWidth*s, h = im.naturalHeight*s;
+      ctx.drawImage(im, cx - w/2 + state.ox*D, cy - h/2 + state.oy*D, w, h);
+    } else {
+      ctx.fillStyle = T.accent; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.font = `700 ${D*0.32}px 'Space Grotesk', sans-serif`;
+      ctx.fillText(initials(nameIn.value), cx, cy + D*0.02);
+    }
+    ctx.restore();
+  }
+
+  // ---------- badge render ----------
+  function render(){
+    const F = FORMATS[state.fmt], T = THEMES[state.theme], W = F.w, H = F.h, s = F.scale;
+    if (badge.width !== W || badge.height !== H){ badge.width = W; badge.height = H; }
+    const ctx = bctx;
+    ctx.setTransform(1,0,0,1,0,0); ctx.textBaseline = 'alphabetic';
+
+    // background + grid
+    ctx.fillStyle = T.bg; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle = T.grid; ctx.lineWidth = 2;
+    for (let x = 0; x <= W; x += 54){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y <= H; y += 54){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    // watermark </>
+    ctx.fillStyle = T.watermark; ctx.textAlign = 'center';
+    ctx.font = `600 ${state.fmt==='story'?520:400}px 'JetBrains Mono', monospace`;
+    ctx.fillText('</>', W*0.72, state.fmt==='story' ? H*0.94 : H*1.02);
+
+    const CW = 860*s, CH = 1240*s, cx = W/2, x0 = cx - CW/2;
+    const top = F.top ?? Math.round((H - CH)/2 + 40*s);
+
+    // short strap (fades in from above)
+    const sw = 96*s, sTop = top - 210*s, sBot = top + 20*s;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(cx - sw/2, sTop, sw, sBot - sTop); ctx.clip();
+    ctx.fillStyle = T.strap; ctx.fillRect(cx - sw/2, sTop, sw, sBot - sTop);
+    ctx.fillStyle = T.strapText; ctx.fillRect(cx - 3*s, sTop, 6*s, sBot - sTop);
+    // fade mask
+    const fade = ctx.createLinearGradient(0, sTop, 0, sTop + 120*s);
+    fade.addColorStop(0, T.bg); fade.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = fade; ctx.fillRect(cx - sw/2, sTop, sw, 120*s);
+    ctx.restore();
+
+    // card
+    ctx.save(); ctx.shadowColor = T.shadow; ctx.shadowBlur = 60*s; ctx.shadowOffsetY = 24*s;
+    rr(ctx, x0, top, CW, CH, 44*s); ctx.fillStyle = T.card; ctx.fill(); ctx.restore();
+    rr(ctx, x0, top, CW, CH, 44*s); ctx.lineWidth = 3*s; ctx.strokeStyle = T.cardEdge; ctx.stroke();
+    // slot hole
+    rr(ctx, cx - 74*s, top + 34*s, 148*s, 34*s, 17*s); ctx.fillStyle = T.hole; ctx.fill();
+
+    // clip (metal piece over the hole)
+    rr(ctx, cx - 30*s, top - 70*s, 60*s, 110*s, 14*s); ctx.fillStyle = T.clip; ctx.fill();
+    rr(ctx, cx - 44*s, top - 104*s, 88*s, 44*s, 20*s); ctx.lineWidth = 9*s; ctx.strokeStyle = T.clip; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, top - 6*s, 9*s, 0, Math.PI*2); ctx.fillStyle = T.clipHi; ctx.fill();
+
+    const y = v => top + v*s;
+    ctx.textAlign = 'center';
+
+    // brand
+    ctx.fillStyle = T.accent; ctx.font = `400 ${26*s}px 'JetBrains Mono', monospace`;
+    ctx.fillText('$ ./encode --edicao=7', cx, y(140));
+    ctx.font = `700 ${70*s}px 'Space Grotesk', sans-serif`;
+    const bA = 'VII ', bB = 'ENCODE';
+    const wA = ctx.measureText(bA).width, wB = ctx.measureText(bB).width, bx = cx - (wA + wB)/2;
+    ctx.textAlign = 'left'; ctx.fillStyle = T.accent; ctx.fillText(bA, bx, y(218));
+    ctx.fillStyle = T.fg; ctx.fillText(bB, bx + wA, y(218)); ctx.textAlign = 'center';
+
+    // photo
+    const pcy = y(468), D = 330*s;
+    ctx.beginPath(); ctx.arc(cx, pcy, D/2 + 26*s, 0, Math.PI*2); ctx.fillStyle = T.ring; ctx.fill();
+    drawPhoto(ctx, cx, pcy, D, T);
+    ctx.beginPath(); ctx.arc(cx, pcy, D/2 + 4*s, 0, Math.PI*2); ctx.lineWidth = 9*s; ctx.strokeStyle = T.accent; ctx.stroke();
+
+    // name + course
+    const maxW = 760*s;
+    const name = nameIn.value.trim() || 'Seu nome';
+    ctx.fillStyle = T.fg;
+    fitText(ctx, name, maxW, 66*s, 40*s, 700, "'Space Grotesk', sans-serif");
+    ctx.fillText(ellipsize(ctx, name, maxW), cx, y(738));
+    const course = courseIn.value.trim() || 'Seu curso';
+    ctx.fillStyle = T.muted;
+    fitText(ctx, course, maxW, 36*s, 26*s, 500, "'Space Grotesk', sans-serif");
+    ctx.fillText(ellipsize(ctx, course, maxW), cx, y(796));
+
+    // divider
+    ctx.strokeStyle = T.cardEdge; ctx.lineWidth = 2*s; ctx.setLineDash([10*s, 10*s]);
+    ctx.beginPath(); ctx.moveTo(cx - 280*s, y(850)); ctx.lineTo(cx + 280*s, y(850)); ctx.stroke(); ctx.setLineDash([]);
+
+    // event
+    ctx.fillStyle = T.fg; ctx.font = `500 ${34*s}px 'Space Grotesk', sans-serif`;
+    ctx.fillText('Estou participando do', cx, y(918));
+    ctx.fillStyle = T.accent; ctx.font = `700 ${64*s}px 'Space Grotesk', sans-serif`;
+    ctx.fillText(`${EVENT.edition} ${EVENT.name} ${EVENT.year}`, cx, y(994));
+    ctx.fillStyle = T.muted; ctx.font = `500 ${28*s}px 'Space Grotesk', sans-serif`;
+    ctx.fillText(EVENT.subtitle, cx, y(1042));
+    ctx.fillStyle = T.fg; ctx.font = `400 ${25*s}px 'JetBrains Mono', monospace`;
+    ctx.fillText(`${EVENT.when} · ${EVENT.where}`, cx, y(1094));
+
+    // tag pill
+    ctx.font = `600 ${26*s}px 'JetBrains Mono', monospace`;
+    const tw = ctx.measureText(EVENT.tag).width + 64*s, th = 56*s;
+    rr(ctx, cx - tw/2, y(1140), tw, th, th/2); ctx.fillStyle = T.accent; ctx.fill();
+    ctx.fillStyle = T.accentInk; ctx.textBaseline = 'middle';
+    ctx.fillText(EVENT.tag, cx, y(1140) + th/2 + 1*s); ctx.textBaseline = 'alphabetic';
+
+    // hashtag under the card (story only, above the Instagram bottom bar)
+    if (state.fmt === 'story'){
+      ctx.fillStyle = T.muted; ctx.font = `400 28px 'JetBrains Mono', monospace`;
+      ctx.fillText(EVENT.hashtag, cx, top + CH + 76);
+    }
+  }
+
+  // ---------- photo editor ----------
+  function renderPhotoEditor(){
+    const T = THEMES[state.theme];
+    pctx.clearRect(0,0,pc.width,pc.height);
+    drawPhoto(pctx, pc.width/2, pc.height/2, pc.width, T);
+  }
+  function update(){ renderPhotoEditor(); render(); }
+
+  function loadFile(file){
+    if (!file || !file.type.startsWith('image/')){ statusEl.textContent = 'Escolha um arquivo de imagem (JPG ou PNG).'; return; }
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => { state.img = im; state.zoom = 1; state.ox = 0; state.oy = 0; zoomIn.value = 1; statusEl.textContent = ''; update(); };
+    im.onerror = () => { statusEl.textContent = 'Não consegui abrir essa imagem. Tente outra foto.'; };
+    im.src = url;
+  }
+  $('pickBtn').addEventListener('click', () => $('fileInput').click());
+  pc.addEventListener('click', () => { if (!state.img) $('fileInput').click(); });
+  $('fileInput').addEventListener('change', e => loadFile(e.target.files[0]));
+  pc.addEventListener('dragover', e => e.preventDefault());
+  pc.addEventListener('drop', e => { e.preventDefault(); loadFile(e.dataTransfer.files[0]); });
+  $('centerBtn').addEventListener('click', () => { state.ox = 0; state.oy = 0; update(); });
+  zoomIn.addEventListener('input', () => { state.zoom = parseFloat(zoomIn.value); update(); });
+
+  let drag = null;
+  pc.addEventListener('pointerdown', e => {
+    if (!state.img) return;
+    drag = { x:e.clientX, y:e.clientY, ox:state.ox, oy:state.oy, size:pc.getBoundingClientRect().width };
+    pc.setPointerCapture(e.pointerId); pc.classList.add('dragging');
+  });
+  pc.addEventListener('pointermove', e => {
+    if (!drag) return;
+    state.ox = drag.ox + (e.clientX - drag.x)/drag.size;
+    state.oy = drag.oy + (e.clientY - drag.y)/drag.size;
+    update();
+  });
+  const endDrag = () => { drag = null; pc.classList.remove('dragging'); };
+  pc.addEventListener('pointerup', endDrag); pc.addEventListener('pointercancel', endDrag);
+  pc.addEventListener('wheel', e => {
+    if (!state.img) return; e.preventDefault();
+    state.zoom = Math.min(3, Math.max(1, state.zoom - e.deltaY*0.0015)); zoomIn.value = state.zoom; update();
+  }, { passive:false });
+
+  nameIn.addEventListener('input', update);
+  courseIn.addEventListener('input', update);
+
+  document.querySelectorAll('[data-fmt]').forEach(b => b.addEventListener('click', () => {
+    state.fmt = b.dataset.fmt;
+    document.querySelectorAll('[data-fmt]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    update();
+  }));
+  document.querySelectorAll('[data-theme-opt]').forEach(b => b.addEventListener('click', () => {
+    state.theme = b.dataset.themeOpt;
+    document.querySelectorAll('[data-theme-opt]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    update();
+  }));
+
+  // ---------- export ----------
+  function slug(t){ return (t || 'participante').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'participante'; }
+  function fileName(){ return `cracha-encode-2026-${slug(nameIn.value)}-${state.fmt}-${state.theme === 'dark' ? 'escuro' : 'claro'}.png`; }
+  function getBlob(){ render(); return new Promise(res => badge.toBlob(res, 'image/png')); }
+  function checkReady(){
+    if (!nameIn.value.trim()){ statusEl.textContent = 'Preencha seu nome antes de gerar o crachá.'; nameIn.focus(); return false; }
+    return true;
+  }
+  $('downloadBtn').addEventListener('click', async () => {
+    if (!checkReady()) return;
+    const blob = await getBlob(); const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = fileName();
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    statusEl.textContent = 'Crachá baixado. Agora é só publicar no Instagram.';
+  });
+
+  // Web Share with files: on phones this opens the share sheet, where Instagram appears
+  const shareBtn = $('shareBtn');
+  try {
+    const probe = new File([new Blob()], 'x.png', { type:'image/png' });
+    if (navigator.canShare && navigator.canShare({ files:[probe] })) shareBtn.hidden = false;
+  } catch (e) {}
+  shareBtn.addEventListener('click', async () => {
+    if (!checkReady()) return;
+    const blob = await getBlob();
+    const file = new File([blob], fileName(), { type:'image/png' });
+    try {
+      await navigator.share({ files:[file], text:`Estou participando do VII Encode 2026! ${EVENT.hashtag}` });
+    } catch (e) {
+      if (e.name !== 'AbortError') statusEl.textContent = 'Não foi possível compartilhar. Use “Baixar crachá”.';
+    }
+  });
+
+  // ---------- boot ----------
+  const fonts = ["700 40px 'Space Grotesk'", "500 40px 'Space Grotesk'", "400 40px 'JetBrains Mono'", "600 40px 'JetBrains Mono'"];
+  update();
+  Promise.all(fonts.map(f => document.fonts.load(f))).then(() => document.fonts.ready).then(update).catch(update);
+})();
+</script>
+</body>
+</html>
