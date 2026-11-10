@@ -106,12 +106,24 @@ footer{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:cent
       </div>
 
       <div class="field">
+        <span class="label" id="roleLabel">Seu papel no evento</span>
+        <div class="seg" role="group" aria-labelledby="roleLabel">
+          <button type="button" data-role="participant" aria-pressed="true">Participante<small>estou no público</small></button>
+          <button type="button" data-role="speaker" aria-pressed="false">Palestrante<small>vou apresentar</small></button>
+        </div>
+      </div>
+
+      <div class="field">
         <label class="label" for="name">Nome</label>
         <input id="name" maxlength="40" placeholder="Como você quer aparecer" value="">
       </div>
       <div class="field">
         <label class="label" for="course">Curso / turma</label>
         <input id="course" maxlength="40" placeholder="Ex.: Redes de Computadores · S3" value="">
+      </div>
+      <div class="field" id="talkField" hidden>
+        <label class="label" for="talk">Título da sua palestra (opcional)</label>
+        <input id="talk" maxlength="70" placeholder="Ex.: Humanos, máquinas e o futuro" value="">
       </div>
 
       <div class="opts">
@@ -160,19 +172,24 @@ footer{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:cent
       bg:'#0A1410', grid:'rgba(61,220,107,0.07)', card:'#0F1E17', cardEdge:'rgba(61,220,107,0.45)',
       fg:'#EAF5EE', muted:'#9DB5A7', accent:'#3DDC6B', accentInk:'#0A1410', watermark:'rgba(61,220,107,0.06)',
       strap:'#13261D', strapText:'rgba(61,220,107,0.75)', clip:'#2A3A33', clipHi:'#4A5D54', hole:'#0A1410',
-      shadow:'rgba(0,0,0,0.55)', ring:'rgba(61,220,107,0.18)', photoBg:'#13261D'
+      shadow:'rgba(0,0,0,0.55)', ring:'rgba(61,220,107,0.18)', photoBg:'#13261D', glow:'rgba(61,220,107,0.45)', bandLine:'rgba(10,20,16,0.10)'
     },
     light: {
       bg:'#F3F7F4', grid:'rgba(10,20,16,0.06)', card:'#FFFFFF', cardEdge:'rgba(21,146,74,0.35)',
       fg:'#0A1410', muted:'#4B5E54', accent:'#15924A', accentInk:'#FFFFFF', watermark:'rgba(21,146,74,0.07)',
       strap:'#0A1410', strapText:'rgba(61,220,107,0.9)', clip:'#2A3A33', clipHi:'#56685F', hole:'#F3F7F4',
-      shadow:'rgba(10,20,16,0.18)', ring:'rgba(21,146,74,0.15)', photoBg:'#E6F2EA'
+      shadow:'rgba(10,20,16,0.18)', ring:'rgba(21,146,74,0.15)', photoBg:'#E6F2EA', glow:'rgba(21,146,74,0.40)', bandLine:'rgba(255,255,255,0.10)'
     }
   };
   const FORMATS = { story:{w:1080,h:1920,scale:1,top:360}, post:{w:1080,h:1350,scale:0.86,top:null} };
 
-  const state = { fmt:'story', theme:'dark', img:null, zoom:1, ox:0, oy:0 };
+  const ROLES = {
+    participant: { tag:'PARTICIPANTE', prompt:'$ ./encode --edicao=7', kicker:'Estou participando do', share:'Estou participando do VII Encode 2026!', file:'participante' },
+    speaker:     { tag:'PALESTRANTE', prompt:'$ sudo ./encode --palestrante', kicker:'Vou palestrar no', share:'Vou palestrar no VII Encode 2026!', file:'palestrante' }
+  };
+  const state = { fmt:'story', theme:'dark', role:'participant', img:null, zoom:1, ox:0, oy:0 };
   const $ = id => document.getElementById(id);
+  const talkIn = $('talk');
   const badge = $('badge'), bctx = badge.getContext('2d');
   const pc = $('photoCanvas'), pctx = pc.getContext('2d');
   const nameIn = $('name'), courseIn = $('course'), zoomIn = $('zoom'), statusEl = $('status');
@@ -234,22 +251,36 @@ footer{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:cent
     const CW = 860*s, CH = 1240*s, cx = W/2, x0 = cx - CW/2;
     const top = F.top ?? Math.round((H - CH)/2 + 40*s);
 
-    // short strap (fades in from above)
+    const R = ROLES[state.role], SP = state.role === 'speaker';
+    const DF = "'Space Grotesk', sans-serif", MF = "'JetBrains Mono', monospace";
+
+    // short strap (fades in from above); speaker strap uses the accent color
     const sw = 96*s, sTop = top - 210*s, sBot = top + 20*s;
     ctx.save();
     ctx.beginPath(); ctx.rect(cx - sw/2, sTop, sw, sBot - sTop); ctx.clip();
-    ctx.fillStyle = T.strap; ctx.fillRect(cx - sw/2, sTop, sw, sBot - sTop);
-    ctx.fillStyle = T.strapText; ctx.fillRect(cx - 3*s, sTop, 6*s, sBot - sTop);
-    // fade mask
+    ctx.fillStyle = SP ? T.accent : T.strap; ctx.fillRect(cx - sw/2, sTop, sw, sBot - sTop);
+    ctx.fillStyle = SP ? T.accentInk : T.strapText; ctx.fillRect(cx - 3*s, sTop, 6*s, sBot - sTop);
     const fade = ctx.createLinearGradient(0, sTop, 0, sTop + 120*s);
     fade.addColorStop(0, T.bg); fade.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = fade; ctx.fillRect(cx - sw/2, sTop, sw, 120*s);
     ctx.restore();
 
-    // card
-    ctx.save(); ctx.shadowColor = T.shadow; ctx.shadowBlur = 60*s; ctx.shadowOffsetY = 24*s;
+    // card (speaker: accent glow)
+    ctx.save();
+    ctx.shadowColor = SP ? T.glow : T.shadow; ctx.shadowBlur = (SP ? 110 : 60)*s; ctx.shadowOffsetY = (SP ? 0 : 24)*s;
     rr(ctx, x0, top, CW, CH, 44*s); ctx.fillStyle = T.card; ctx.fill(); ctx.restore();
-    rr(ctx, x0, top, CW, CH, 44*s); ctx.lineWidth = 3*s; ctx.strokeStyle = T.cardEdge; ctx.stroke();
+
+    const y = v => top + v*s;
+    if (SP){
+      // accent header band
+      ctx.save(); rr(ctx, x0, top, CW, CH, 44*s); ctx.clip();
+      ctx.fillStyle = T.accent; ctx.fillRect(x0, top, CW, 262*s);
+      ctx.strokeStyle = T.bandLine; ctx.lineWidth = 2*s;
+      for (let gx = x0 + 43*s; gx < x0 + CW; gx += 43*s){ ctx.beginPath(); ctx.moveTo(gx, top); ctx.lineTo(gx, y(262)); ctx.stroke(); }
+      for (let gy = top + 43*s; gy < y(262); gy += 43*s){ ctx.beginPath(); ctx.moveTo(x0, gy); ctx.lineTo(x0 + CW, gy); ctx.stroke(); }
+      ctx.restore();
+    }
+    rr(ctx, x0, top, CW, CH, 44*s); ctx.lineWidth = (SP ? 7 : 3)*s; ctx.strokeStyle = SP ? T.accent : T.cardEdge; ctx.stroke();
     // slot hole
     rr(ctx, cx - 74*s, top + 34*s, 148*s, 34*s, 17*s); ctx.fillStyle = T.hole; ctx.fill();
 
@@ -258,33 +289,35 @@ footer{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:cent
     rr(ctx, cx - 44*s, top - 104*s, 88*s, 44*s, 20*s); ctx.lineWidth = 9*s; ctx.strokeStyle = T.clip; ctx.stroke();
     ctx.beginPath(); ctx.arc(cx, top - 6*s, 9*s, 0, Math.PI*2); ctx.fillStyle = T.clipHi; ctx.fill();
 
-    const y = v => top + v*s;
     ctx.textAlign = 'center';
 
     // brand
-    ctx.fillStyle = T.accent; ctx.font = `400 ${26*s}px 'JetBrains Mono', monospace`;
-    ctx.fillText('$ ./encode --edicao=7', cx, y(140));
-    ctx.font = `700 ${70*s}px 'Space Grotesk', sans-serif`;
+    ctx.fillStyle = SP ? T.accentInk : T.accent; ctx.font = `${SP ? 600 : 400} ${26*s}px ${MF}`;
+    ctx.fillText(R.prompt, cx, y(140));
+    ctx.font = `700 ${70*s}px ${DF}`;
     const bA = 'VII ', bB = 'ENCODE';
     const wA = ctx.measureText(bA).width, wB = ctx.measureText(bB).width, bx = cx - (wA + wB)/2;
-    ctx.textAlign = 'left'; ctx.fillStyle = T.accent; ctx.fillText(bA, bx, y(218));
-    ctx.fillStyle = T.fg; ctx.fillText(bB, bx + wA, y(218)); ctx.textAlign = 'center';
+    ctx.textAlign = 'left';
+    if (SP){ ctx.fillStyle = T.accentInk; ctx.globalAlpha = 0.7; ctx.fillText(bA, bx, y(218)); ctx.globalAlpha = 1; }
+    else { ctx.fillStyle = T.accent; ctx.fillText(bA, bx, y(218)); }
+    ctx.fillStyle = SP ? T.accentInk : T.fg; ctx.fillText(bB, bx + wA, y(218)); ctx.textAlign = 'center';
 
     // photo
-    const pcy = y(468), D = 330*s;
-    ctx.beginPath(); ctx.arc(cx, pcy, D/2 + 26*s, 0, Math.PI*2); ctx.fillStyle = T.ring; ctx.fill();
+    const pcy = y(476), D = 330*s;
+    ctx.beginPath(); ctx.arc(cx, pcy, D/2 + 26*s, 0, Math.PI*2); ctx.fillStyle = SP ? T.card : T.ring; ctx.fill();
     drawPhoto(ctx, cx, pcy, D, T);
     ctx.beginPath(); ctx.arc(cx, pcy, D/2 + 4*s, 0, Math.PI*2); ctx.lineWidth = 9*s; ctx.strokeStyle = T.accent; ctx.stroke();
+    if (SP){ ctx.beginPath(); ctx.arc(cx, pcy, D/2 + 24*s, 0, Math.PI*2); ctx.lineWidth = 3*s; ctx.strokeStyle = T.accent; ctx.stroke(); }
 
     // name + course
     const maxW = 760*s;
     const name = nameIn.value.trim() || 'Seu nome';
     ctx.fillStyle = T.fg;
-    fitText(ctx, name, maxW, 66*s, 40*s, 700, "'Space Grotesk', sans-serif");
+    fitText(ctx, name, maxW, 66*s, 40*s, 700, DF);
     ctx.fillText(ellipsize(ctx, name, maxW), cx, y(738));
-    const course = courseIn.value.trim() || 'Seu curso';
+    const course = courseIn.value.trim() || (SP ? 'Sua instituição ou área' : 'Seu curso');
     ctx.fillStyle = T.muted;
-    fitText(ctx, course, maxW, 36*s, 26*s, 500, "'Space Grotesk', sans-serif");
+    fitText(ctx, course, maxW, 36*s, 26*s, 500, DF);
     ctx.fillText(ellipsize(ctx, course, maxW), cx, y(796));
 
     // divider
@@ -292,21 +325,29 @@ footer{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:cent
     ctx.beginPath(); ctx.moveTo(cx - 280*s, y(850)); ctx.lineTo(cx + 280*s, y(850)); ctx.stroke(); ctx.setLineDash([]);
 
     // event
-    ctx.fillStyle = T.fg; ctx.font = `500 ${34*s}px 'Space Grotesk', sans-serif`;
-    ctx.fillText('Estou participando do', cx, y(918));
-    ctx.fillStyle = T.accent; ctx.font = `700 ${64*s}px 'Space Grotesk', sans-serif`;
+    ctx.fillStyle = T.fg; ctx.font = `500 ${34*s}px ${DF}`;
+    ctx.fillText(R.kicker, cx, y(918));
+    ctx.fillStyle = T.accent; ctx.font = `700 ${64*s}px ${DF}`;
     ctx.fillText(`${EVENT.edition} ${EVENT.name} ${EVENT.year}`, cx, y(994));
-    ctx.fillStyle = T.muted; ctx.font = `500 ${28*s}px 'Space Grotesk', sans-serif`;
-    ctx.fillText(EVENT.subtitle, cx, y(1042));
-    ctx.fillStyle = T.fg; ctx.font = `400 ${25*s}px 'JetBrains Mono', monospace`;
+    const talk = SP ? talkIn.value.trim() : '';
+    if (talk){
+      const t = `“${talk}”`;
+      ctx.fillStyle = T.fg; fitText(ctx, t, maxW, 30*s, 22*s, 500, DF);
+      ctx.fillText(ellipsize(ctx, t, maxW), cx, y(1042));
+    } else {
+      ctx.fillStyle = T.muted; ctx.font = `500 ${28*s}px ${DF}`;
+      ctx.fillText(EVENT.subtitle, cx, y(1042));
+    }
+    ctx.fillStyle = T.fg; ctx.font = `400 ${25*s}px ${MF}`;
     ctx.fillText(`${EVENT.when} · ${EVENT.where}`, cx, y(1094));
 
-    // tag pill
-    ctx.font = `600 ${26*s}px 'JetBrains Mono', monospace`;
-    const tw = ctx.measureText(EVENT.tag).width + 64*s, th = 56*s;
-    rr(ctx, cx - tw/2, y(1140), tw, th, th/2); ctx.fillStyle = T.accent; ctx.fill();
+    // tag pill (speaker: larger, with an outer outline)
+    ctx.font = `${SP ? 700 : 600} ${(SP ? 30 : 26)*s}px ${MF}`;
+    const tw = ctx.measureText(R.tag).width + (SP ? 80 : 64)*s, th = (SP ? 64 : 56)*s, ty = y(SP ? 1134 : 1140);
+    if (SP){ rr(ctx, cx - tw/2 - 9*s, ty - 9*s, tw + 18*s, th + 18*s, th/2 + 9*s); ctx.lineWidth = 3*s; ctx.strokeStyle = T.accent; ctx.stroke(); }
+    rr(ctx, cx - tw/2, ty, tw, th, th/2); ctx.fillStyle = T.accent; ctx.fill();
     ctx.fillStyle = T.accentInk; ctx.textBaseline = 'middle';
-    ctx.fillText(EVENT.tag, cx, y(1140) + th/2 + 1*s); ctx.textBaseline = 'alphabetic';
+    ctx.fillText(R.tag, cx, ty + th/2 + 1*s); ctx.textBaseline = 'alphabetic';
 
     // hashtag under the card (story only, above the Instagram bottom bar)
     if (state.fmt === 'story'){
@@ -358,6 +399,13 @@ footer{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:cent
   }, { passive:false });
 
   nameIn.addEventListener('input', update);
+  talkIn.addEventListener('input', update);
+  document.querySelectorAll('[data-role]').forEach(b => b.addEventListener('click', () => {
+    state.role = b.dataset.role;
+    document.querySelectorAll('[data-role]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    $('talkField').hidden = state.role !== 'speaker';
+    update();
+  }));
   courseIn.addEventListener('input', update);
 
   document.querySelectorAll('[data-fmt]').forEach(b => b.addEventListener('click', () => {
@@ -373,7 +421,7 @@ footer{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:cent
 
   // ---------- export ----------
   function slug(t){ return (t || 'participante').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'participante'; }
-  function fileName(){ return `cracha-encode-2026-${slug(nameIn.value)}-${state.fmt}-${state.theme === 'dark' ? 'escuro' : 'claro'}.png`; }
+  function fileName(){ return `cracha-encode-2026-${ROLES[state.role].file}-${slug(nameIn.value)}-${state.fmt}-${state.theme === 'dark' ? 'escuro' : 'claro'}.png`; }
   function getBlob(){ render(); return new Promise(res => badge.toBlob(res, 'image/png')); }
   function checkReady(){
     if (!nameIn.value.trim()){ statusEl.textContent = 'Preencha seu nome antes de gerar o crachá.'; nameIn.focus(); return false; }
@@ -399,7 +447,7 @@ footer{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:cent
     const blob = await getBlob();
     const file = new File([blob], fileName(), { type:'image/png' });
     try {
-      await navigator.share({ files:[file], text:`Estou participando do VII Encode 2026! ${EVENT.hashtag}` });
+      await navigator.share({ files:[file], text:`${ROLES[state.role].share} ${EVENT.hashtag}` });
     } catch (e) {
       if (e.name !== 'AbortError') statusEl.textContent = 'Não foi possível compartilhar. Use “Baixar crachá”.';
     }
